@@ -33,7 +33,7 @@ function AppContent() {
   return (
     <div className="app-root">
       <Sidebar showSidebar={isLoggedIn}/>
-      <main className="content">
+      <main className={`content${isLoggedIn ? "" : " content--login"}`}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route 

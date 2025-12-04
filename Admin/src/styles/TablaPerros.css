@@ -1,3 +1,9 @@
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .tabla-perros-wrapper {
   width: 95%;
   margin: 0 auto;
@@ -140,6 +146,142 @@
   accent-color: #4A1214; 
 }
 
+.denuncias-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.denuncias-container-mobile {
+  padding: 16px;
+  height: auto;
+  min-height: auto;
+}
+
+.denuncias-mobile-topbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.denuncias-mobile-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.denuncias-mobile-select input {
+  accent-color: #4A1214;
+}
+
+.denuncias-mobile-counter {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.denuncias-mobile-empty {
+  text-align: center;
+  padding: 20px;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.denuncias-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.denuncia-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.denuncia-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.denuncia-card-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.denuncia-card-select input {
+  accent-color: #4A1214;
+}
+
+.denuncia-status-pill {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
+.denuncia-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.denuncia-card-body p {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.denuncia-card-body p span {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.denuncia-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.denuncia-card-date {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.denuncia-card-link {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .tabla-perros-container {
@@ -194,6 +336,32 @@
     width: 16px;
     height: 16px;
   }
+
+  .denuncias-container-mobile {
+    padding: 12px;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .denuncias-mobile-topbar {
+    background-color: #ffffff;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.1);
+  }
+
+  .denuncia-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .denuncia-card-footer {
+    align-items: flex-start;
+  }
+
+  .denuncia-card-link {
+    font-size: 0.95rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -224,5 +392,24 @@
   .btn-nuevo, .btn-eliminar {
     width: 100%;
     justify-content: center;
+  }
+
+  .denuncias-mobile-topbar {
+    padding: 10px;
+  }
+
+  .denuncia-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .denuncia-card-body {
+    font-size: 0.9rem;
+  }
+
+  .denuncia-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
