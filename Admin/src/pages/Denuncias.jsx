@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE_URL, AUTH_TOKEN } from "../config";
+import CustomSelect from "../components/CustomSelect"; 
 import "../styles/TablaPerros.css";
 
 const STATUS_META = {
@@ -80,6 +81,10 @@ export default function Denuncias() {
   const [selected, setSelected] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const [closing, setClosing] = useState(false);
   const [actionError, setActionError] = useState(null);
   const [actionSuccess, setActionSuccess] = useState(null);
@@ -91,6 +96,23 @@ export default function Denuncias() {
   const [isMobile, setIsMobile] = useState(getIsMobile);
 
   const isMountedRef = useRef(true);
+
+  const totalPages = Math.ceil(reports.length / rowsPerPage);
+  const startIndex = page * rowsPerPage;
+  const visibleRows = reports.slice(startIndex, startIndex + rowsPerPage);
+
+  const handleNext = () => {
+    if (page < totalPages - 1) setPage(page + 1);
+  };
+
+  const handlePrev = () => {
+    if (page > 0) setPage(page - 1);
+  };
+
+  const handleRowsChange = (e) => {
+    setRowsPerPage(Number(e.target.value));
+    setPage(0);
+  };
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -109,8 +131,6 @@ export default function Denuncias() {
     };
 
     window.addEventListener("resize", handleResize);
-
-    // Sincroniza el estado inicial al montar
     handleResize();
 
     return () => {
@@ -125,38 +145,20 @@ export default function Denuncias() {
         setError(null);
       }
 
-      const headers = {
-        "Content-Type": "application/json",
-      };
-
-      if (AUTH_TOKEN) {
-        headers.Authorization = `Bearer ${AUTH_TOKEN}`;
-      }
+      const headers = { "Content-Type": "application/json" };
+      if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
 
       try {
-        const requestOptions = {
-          method: "GET",
-          headers,
-        };
+        const requestOptions = { method: "GET", headers };
+        if (signal) requestOptions.signal = signal;
 
-        if (signal) {
-          requestOptions.signal = signal;
-        }
+        const response = await fetch(`${API_BASE_URL}/reports/find-all`, requestOptions);
 
-        const response = await fetch(
-          `${API_BASE_URL}/reports/find-all`,
-          requestOptions
-        );
-
-        if (!response.ok) {
-          throw new Error(`Error al obtener denuncias: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Error al obtener denuncias: ${response.status}`);
 
         const result = await response.json();
 
-        if (!Array.isArray(result.data)) {
-          throw new Error("La respuesta del servidor no contiene datos válidos.");
-        }
+        if (!Array.isArray(result.data)) throw new Error("La respuesta del servidor no contiene datos válidos.");
 
         const normalized = result.data.map((report, index) => {
           const reporterName = report.isAnonymous
@@ -173,14 +175,8 @@ export default function Denuncias() {
             id: report.id,
             serial: index + 1,
             reporter: reporterName,
-            email:
-              safeTrim(report.contactEmail) ||
-              safeTrim(report.person?.email) ||
-              "—",
-            phone:
-              safeTrim(report.contactPhone) ||
-              safeTrim(report.person?.phoneNumber) ||
-              "—",
+            email: safeTrim(report.contactEmail) || safeTrim(report.person?.email) || "—",
+            phone: safeTrim(report.contactPhone) || safeTrim(report.person?.phoneNumber) || "—",
             status: report.status,
             receptionDate: report.receptionDate,
           };
@@ -193,22 +189,13 @@ export default function Denuncias() {
           setShowErrorSpinner(false);
         }
       } catch (requestError) {
-        if (requestError.name === "AbortError") {
-          return;
-        }
-
+        if (requestError.name === "AbortError") return;
         console.error("Error al cargar denuncias:", requestError);
-
         if (isMountedRef.current) {
-          setError(
-            requestError.message ||
-              "No fue posible obtener las denuncias en este momento."
-          );
+          setError(requestError.message || "No fue posible obtener las denuncias en este momento.");
         }
       } finally {
-        if (isMountedRef.current) {
-          setLoading(false);
-        }
+        if (isMountedRef.current) setLoading(false);
       }
     },
     []
@@ -217,16 +204,11 @@ export default function Denuncias() {
   useEffect(() => {
     const controller = new AbortController();
     fetchReports(controller.signal);
-
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [fetchReports]);
 
   const handleCloseReports = useCallback(async () => {
-    if (selected.length === 0 || closing) {
-      return;
-    }
+    if (selected.length === 0 || closing) return;
 
     const reportsToClose = [...selected];
 
@@ -237,57 +219,31 @@ export default function Denuncias() {
       setShowErrorSpinner(false);
     }
 
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    if (AUTH_TOKEN) {
-      headers.Authorization = `Bearer ${AUTH_TOKEN}`;
-    }
+    const headers = { "Content-Type": "application/json" };
+    if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
 
     try {
       for (const reportId of reportsToClose) {
-        const response = await fetch(
-          `${API_BASE_URL}/reports/update-status`,
-          {
-            method: "PATCH",
-            headers,
-            body: JSON.stringify({
-              reportId,
-              status: "CLOSED",
-            }),
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/reports/update-status`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ reportId, status: "CLOSED" }),
+        });
 
         const rawBody = await response.text();
-
         let parsedBody = null;
-        if (rawBody) {
-          try {
-            parsedBody = JSON.parse(rawBody);
-          } catch {
-            parsedBody = null;
-          }
-        }
+        try { parsedBody = JSON.parse(rawBody); } catch { parsedBody = null; }
 
         const serverMessage = safeTrim(
-          typeof parsedBody?.message === "string"
-            ? parsedBody.message
-            : rawBody
+          typeof parsedBody?.message === "string" ? parsedBody.message : rawBody
         );
 
-        if (
-          serverMessage &&
-          serverMessage.includes("The report already has the status: CLOSED")
-        ) {
+        if (serverMessage && serverMessage.includes("The report already has the status: CLOSED")) {
           throw new Error("Esta denuncia ya esta cerrada");
         }
 
         if (!response.ok) {
-          throw new Error(
-            serverMessage ||
-              `No se pudo cerrar la denuncia seleccionada (${reportId}).`
-          );
+          throw new Error(serverMessage || `No se pudo cerrar la denuncia seleccionada (${reportId}).`);
         }
       }
 
@@ -297,25 +253,30 @@ export default function Denuncias() {
             ? "Denuncia cerrada correctamente."
             : "Denuncias cerradas correctamente."
         );
+        setTimeout(() => {
+          if (isMountedRef.current) setActionSuccess(null);
+        }, 5000);
       }
 
       await fetchReports();
     } catch (closeError) {
       console.error("Error al cerrar denuncias:", closeError);
       if (isMountedRef.current) {
-        const userMessage =
-          closeError.message ||
-          "Ocurrió un problema al cerrar las denuncias seleccionadas.";
-
+        const userMessage = closeError.message || "Ocurrió un problema al cerrar las denuncias seleccionadas.";
         setActionError(userMessage);
-        setShowErrorSpinner(userMessage === "Esta denuncia ya esta cerrada");
+        setShowErrorSpinner(false);
+        setTimeout(() => {
+          if (isMountedRef.current) setActionError(null);
+        }, 5000);
       }
     } finally {
-      if (isMountedRef.current) {
-        setClosing(false);
-      }
+      if (isMountedRef.current) setClosing(false);
     }
   }, [closing, fetchReports, selected]);
+
+  const allVisibleSelected =
+    visibleRows.length > 0 &&
+    visibleRows.every((row) => selected.includes(row.id));
 
   const toggleSelectAll = () => {
     if (closing || reports.length === 0) return;
@@ -324,10 +285,12 @@ export default function Denuncias() {
     setActionError(null);
     setShowErrorSpinner(false);
 
-    if (selected.length === reports.length) {
-      setSelected([]);
+    if (allVisibleSelected) {
+        const visibleIds = visibleRows.map(r => r.id);
+        setSelected(prev => prev.filter(id => !visibleIds.includes(id)));
     } else {
-      setSelected(reports.map((report) => report.id));
+        const visibleIds = visibleRows.map(r => r.id);
+        setSelected(prev => [...new Set([...prev, ...visibleIds])]);
     }
   };
 
@@ -347,7 +310,6 @@ export default function Denuncias() {
 
   const handleCloseDetalle = () => {
     if (!isMountedRef.current) return;
-
     setDetailModalOpen(false);
     setDetailLoading(false);
     setDetailError(null);
@@ -364,73 +326,39 @@ export default function Denuncias() {
       setDetailData(null);
     }
 
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    if (AUTH_TOKEN) {
-      headers.Authorization = `Bearer ${AUTH_TOKEN}`;
-    }
+    const headers = { "Content-Type": "application/json" };
+    if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/reports/find-by-id/${reportId}`,
-        {
-          method: "GET",
-          headers,
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/reports/find-by-id/${reportId}`, { method: "GET", headers });
 
-      if (!response.ok) {
-        throw new Error(
-          `No fue posible obtener la denuncia (${response.status}).`
-        );
-      }
+      if (!response.ok) throw new Error(`No fue posible obtener la denuncia (${response.status}).`);
 
       const payload = await response.json();
       const report = payload?.data ?? payload;
 
-      if (!report) {
-        throw new Error("No se encontró información de la denuncia.");
-      }
+      if (!report) throw new Error("No se encontró información de la denuncia.");
 
       const normalizada = {
-        description:
-          safeTrim(report.description) || "No hay descripción disponible.",
-        email:
-          safeTrim(report.contactEmail) ||
-          safeTrim(report.person?.email) ||
-          "—",
-        phone:
-          safeTrim(report.contactPhone) ||
-          safeTrim(report.person?.phoneNumber) ||
-          "—",
+        description: safeTrim(report.description) || "No hay descripción disponible.",
+        email: safeTrim(report.contactEmail) || safeTrim(report.person?.email) || "—",
+        phone: safeTrim(report.contactPhone) || safeTrim(report.person?.phoneNumber) || "—",
         photo: safeTrim(report.photo),
         status: safeTrim(report.status) || "",
         type: safeTrim(report.type) || "",
         location: safeTrim(report.location) || "",
       };
 
-      if (isMountedRef.current) {
-        setDetailData(normalizada);
-      }
+      if (isMountedRef.current) setDetailData(normalizada);
     } catch (viewError) {
       console.error("Error al obtener denuncia:", viewError);
       if (isMountedRef.current) {
-        setDetailError(
-          viewError.message ||
-            "No fue posible cargar la información de la denuncia."
-        );
+        setDetailError(viewError.message || "No fue posible cargar la información de la denuncia.");
       }
     } finally {
-      if (isMountedRef.current) {
-        setDetailLoading(false);
-      }
+      if (isMountedRef.current) setDetailLoading(false);
     }
   };
-
-  const allSelected =
-    reports.length > 0 && selected.length === reports.length;
 
   const isCloseDisabled = selected.length === 0 || closing || loading;
   const closeButtonLabel = closing ? "CERRANDO..." : "CERRAR DENUNCIA";
@@ -459,68 +387,33 @@ export default function Denuncias() {
       </div>
 
       {actionError && (
-        <div
-          style={{
-            marginTop: "12px",
-            padding: "16px",
-            backgroundColor: "#fee2e2",
-            color: "#b91c1c",
-            borderRadius: "8px",
-            fontSize: "0.95rem",
-          }}
-        >
+        <div style={{ marginTop: "12px", padding: "16px", backgroundColor: "#fee2e2", color: "#b91c1c", borderRadius: "8px", fontSize: "0.95rem" }}>
           <div>{actionError}</div>
           {showErrorSpinner && (
             <div style={{ marginTop: "10px" }}>
-              <Loader variant="inline" />
+              <Loader variant="inline" text="Cargando datos..." />
             </div>
           )}
         </div>
       )}
 
       {actionSuccess && (
-        <div
-          style={{
-            marginTop: "12px",
-            padding: "16px",
-            backgroundColor: "#dcfce7",
-            color: "#166534",
-            borderRadius: "8px",
-            fontSize: "0.95rem",
-          }}
-        >
+        <div style={{ marginTop: "12px", padding: "16px", backgroundColor: "#dcfce7", color: "#166534", borderRadius: "8px", fontSize: "0.95rem" }}>
           {actionSuccess}
         </div>
       )}
 
-      {closing && !loading && (
-        <Loader text="Cerrando denuncias..." />
-      )}
-
-      {loading && (
-        <Loader text="Cargando denuncias..." />
-      )}
-
+      {closing && !loading && <Loader text="Cerrando denuncias..." />}
+      {loading && <Loader text="Cargando denuncias..." />}
       {!loading && error && (
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "20px",
-            backgroundColor: "#fee2e2",
-            color: "#b91c1c",
-            borderRadius: "8px",
-          }}
-        >
+        <div style={{ marginTop: "20px", padding: "20px", backgroundColor: "#fee2e2", color: "#b91c1c", borderRadius: "8px" }}>
           {error}
         </div>
       )}
 
       {!loading && !error && (
-        <div
-          className={`tabla-perros-container ${
-            isMobile ? "denuncias-container-mobile" : ""
-          }`}
-        >
+        <div className={`tabla-perros-container ${isMobile ? "denuncias-container-mobile" : ""}`}>
+          
           {isMobile ? (
             <>
               <div className="denuncias-mobile-topbar">
@@ -529,31 +422,25 @@ export default function Denuncias() {
                     type="checkbox"
                     disabled={closing || loading || reports.length === 0}
                     onChange={toggleSelectAll}
-                    checked={allSelected}
+                    checked={allVisibleSelected}
                   />
                   <span>Seleccionar todo</span>
                 </label>
                 {selected.length > 0 && (
                   <span className="denuncias-mobile-counter">
-                    {selected.length === 1
-                      ? "1 seleccionada"
-                      : `${selected.length} seleccionadas`}
+                    {selected.length === 1 ? "1 seleccionada" : `${selected.length} seleccionadas`}
                   </span>
                 )}
               </div>
 
               {reports.length === 0 ? (
                 <div className="denuncias-mobile-empty">
-                <Loader variant="inline" />
+                   <Loader variant="inline" text="Cargando datos..." />
                 </div>
               ) : (
                 <div className="denuncias-mobile-list">
-                  {reports.map((report) => {
-                    const statusMeta =
-                      STATUS_META[report.status] || {
-                        label: safeTrim(report.status) || "Desconocido",
-                        color: "#64748b",
-                      };
+                  {visibleRows.map((report) => {
+                    const statusMeta = STATUS_META[report.status] || { label: safeTrim(report.status) || "Desconocido", color: "#64748b" };
 
                     return (
                       <div className="denuncia-card" key={report.id}>
@@ -567,40 +454,18 @@ export default function Denuncias() {
                             />
                             <span>#{report.serial}</span>
                           </label>
-                          <span
-                            className="denuncia-status-pill"
-                            style={{ backgroundColor: statusMeta.color }}
-                          >
+                          <span className="denuncia-status-pill" style={{ backgroundColor: statusMeta.color }}>
                             {statusMeta.label}
                           </span>
                         </div>
-
                         <div className="denuncia-card-body">
-                          <p>
-                            <span>Denuncian:</span>
-                            {report.reporter}
-                          </p>
-                          <p>
-                            <span>Correo:</span>
-                            {report.email}
-                          </p>
-                          <p>
-                            <span>Teléfono:</span>
-                            {report.phone}
-                          </p>
+                          <p><span>Denuncian:</span>{report.reporter}</p>
+                          <p><span>Correo:</span>{report.email}</p>
+                          <p><span>Teléfono:</span>{report.phone}</p>
                         </div>
-
                         <div className="denuncia-card-footer">
-                          <span className="denuncia-card-date">
-                            {formatDateTime(report.receptionDate)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleVerDenuncia(report.id)}
-                            className="denuncia-card-link"
-                          >
-                            VER
-                          </button>
+                          <span className="denuncia-card-date">{formatDateTime(report.receptionDate)}</span>
+                          <button type="button" onClick={() => handleVerDenuncia(report.id)} className="denuncia-card-link">VER</button>
                         </div>
                       </div>
                     );
@@ -618,11 +483,11 @@ export default function Denuncias() {
                         type="checkbox"
                         disabled={closing || loading || reports.length === 0}
                         onChange={toggleSelectAll}
-                        checked={allSelected}
+                        checked={allVisibleSelected}
                       />
                     </th>
                     <th className="th">ID Denuncia</th>
-                    <th className="th">Denuncian</th>
+                    <th className="th">Denunciante</th>
                     <th className="th">Correo</th>
                     <th className="th">Teléfono</th>
                     <th className="th">Fecha</th>
@@ -634,16 +499,12 @@ export default function Denuncias() {
                   {reports.length === 0 && (
                     <tr>
                       <td className="td" colSpan={8} style={{ textAlign: "center" }}>
-                        <Loader variant="inline" />
+                        <Loader variant="inline" text="Cargando datos..." />
                       </td>
                     </tr>
                   )}
-                  {reports.map((report) => {
-                    const statusMeta =
-                      STATUS_META[report.status] || {
-                        label: safeTrim(report.status) || "Desconocido",
-                        color: "#64748b",
-                      };
+                  {visibleRows.map((report) => {
+                    const statusMeta = STATUS_META[report.status] || { label: safeTrim(report.status) || "Desconocido", color: "#64748b" };
 
                     return (
                       <tr key={report.id}>
@@ -659,37 +520,59 @@ export default function Denuncias() {
                         <td className="td">{report.reporter}</td>
                         <td className="td">{report.email}</td>
                         <td className="td">{report.phone}</td>
+                        <td className="td">{formatDateTime(report.receptionDate)}</td>
                         <td className="td">
-                          {formatDateTime(report.receptionDate)}
-                        </td>
-                        <td className="td">
-                          <span
-                            style={{
-                              padding: "4px 12px",
-                              borderRadius: "999px",
-                              backgroundColor: statusMeta.color,
-                              color: "#fff",
-                              fontSize: "0.85rem",
-                              fontWeight: 600,
-                            }}
-                          >
+                          <span style={{ padding: "4px 12px", borderRadius: "999px", backgroundColor: statusMeta.color, color: "#fff", fontSize: "0.85rem", fontWeight: 600 }}>
                             {statusMeta.label}
                           </span>
                         </td>
                         <td className="td">
-                          <button
-                            type="button"
-                            onClick={() => handleVerDenuncia(report.id)}
-                            className="denuncia-card-link"
-                          >
-                            VER
-                          </button>
+                          <button type="button" onClick={() => handleVerDenuncia(report.id)} className="denuncia-card-link">VER</button>
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+          
+          {reports.length > 0 && (
+            <div className="paginacion">
+                <div className="paginacion-botones">
+                <button
+                    onClick={handlePrev}
+                    disabled={page === 0 || loading || closing}
+                    className="paginacion-btn"
+                >
+                    Anterior
+                </button>
+
+                <button
+                    onClick={handleNext}
+                    disabled={page === totalPages - 1 || loading || closing}
+                    className="paginacion-btn"
+                >
+                    Siguiente
+                </button>
+                </div>
+
+                <span style={{ color: "#555" }}>
+                Página <strong>{page + 1}</strong> de {totalPages || 1}
+                </span>
+                <div className="rows-control">
+                <span>Filas por pág:</span>
+
+                <CustomSelect
+                    value={rowsPerPage}
+                    onChange={handleRowsChange}
+                    options={[
+                    { value: 5, label: "5" },
+                    { value: 10, label: "10" },
+                    { value: 20, label: "20" },
+                    ]}
+                />
+                </div>
             </div>
           )}
         </div>
@@ -699,78 +582,34 @@ export default function Denuncias() {
         <div
           onClick={handleCloseDetalle}
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: isMobile ? "16px" : "24px",
-            zIndex: 1000,
-            backdropFilter: "blur(2px)",
+            position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px" : "24px", zIndex: 1000, backdropFilter: "blur(2px)"
           }}
         >
           <div
             onClick={(event) => event.stopPropagation()}
             style={{
-              width: "100%",
-              maxWidth: isMobile ? "480px" : "540px",
-              backgroundColor: "#fff",
-              borderRadius: isMobile ? "14px" : "16px",
-              padding: isMobile ? "22px" : "28px",
-              boxShadow: "0 24px 60px rgba(15,23,42,0.18)",
-              position: "relative",
-              maxHeight: isMobile ? "95vh" : "90vh",
-              overflowY: "auto",
+              width: "100%", maxWidth: isMobile ? "480px" : "540px", backgroundColor: "#fff", borderRadius: isMobile ? "14px" : "16px",
+              padding: isMobile ? "22px" : "28px", boxShadow: "0 24px 60px rgba(15,23,42,0.18)", position: "relative", maxHeight: isMobile ? "95vh" : "90vh", overflowY: "auto"
             }}
           >
             <button
-              type="button"
-              onClick={handleCloseDetalle}
-              style={{
-                position: "absolute",
-                right: "16px",
-                top: "16px",
-                background: "none",
-                border: "none",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-                color: "#64748b",
-              }}
-              aria-label="Cerrar detalle"
+              type="button" onClick={handleCloseDetalle}
+              style={{ position: "absolute", right: "16px", top: "16px", background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#64748b" }}
             >
               ×
             </button>
 
-            <h3 style={{ marginTop: 0, marginBottom: "18px", color: "#111827" }}>
-              Detalle de la denuncia
-            </h3>
+            <h3 style={{ marginTop: 0, marginBottom: "18px", color: "#111827" }}>Detalle de la denuncia</h3>
 
             {detailLoading && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  padding: "24px 0",
-                }}
-              >
+              <div style={{ display: "flex", justifyContent: "center", padding: "24px 0" }}>
                 <Loader variant="inline" text="Cargando denuncia..." />
               </div>
             )}
 
             {!detailLoading && detailError && (
-              <div
-                style={{
-                  backgroundColor: "#fee2e2",
-                  color: "#b91c1c",
-                  padding: "16px",
-                  borderRadius: "12px",
-                  fontSize: "0.95rem",
-                }}
-              >
+              <div style={{ backgroundColor: "#fee2e2", color: "#b91c1c", padding: "16px", borderRadius: "12px", fontSize: "0.95rem" }}>
                 {detailError}
               </div>
             )}
@@ -778,86 +617,27 @@ export default function Denuncias() {
             {!detailLoading && !detailError && detailData && (
               <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                 {detailData.photo ? (
-                  <img
-                    src={detailData.photo}
-                    alt="Evidencia de la denuncia"
-                    style={{
-                      width: "100%",
-                      borderRadius: "12px",
-                      objectFit: "cover",
-                      maxHeight: "260px",
-                    }}
-                  />
+                  <img src={detailData.photo} alt="Evidencia de la denuncia" style={{ width: "100%", borderRadius: "12px", objectFit: "cover", maxHeight: "260px" }} />
                 ) : (
-                  <div
-                    style={{
-                      width: "100%",
-                      borderRadius: "12px",
-                      backgroundColor: "#f1f5f9",
-                      color: "#475569",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minHeight: "180px",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <div style={{ width: "100%", borderRadius: "12px", backgroundColor: "#f1f5f9", color: "#475569", display: "flex", alignItems: "center", justifyContent: "center", minHeight: "180px", fontWeight: 500 }}>
                     Sin evidencia disponible
                   </div>
                 )}
-
                 <div>
-                  <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#1f2937" }}>
-                    Denuncia
-                  </p>
-                  <p style={{ margin: 0, color: "#4b5563", lineHeight: 1.5 }}>
-                    {detailData.description}
-                  </p>
+                  <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#1f2937" }}>Denuncia</p>
+                  <p style={{ margin: 0, color: "#4b5563", lineHeight: 1.5 }}>{detailData.description}</p>
                 </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                    color: "#1f2937",
-                    fontSize: "0.95rem",
-                  }}
-                >
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Correo:&nbsp;</span>
-                    <span>{detailData.email}</span>
-                  </div>
-                  <div>
-                    <span style={{ fontWeight: 600 }}>Teléfono:&nbsp;</span>
-                    <span>{detailData.phone}</span>
-                  </div>
-                  {detailData.location && (
-                    <div>
-                      <span style={{ fontWeight: 600 }}>Ubicación:&nbsp;</span>
-                      <span>{detailData.location}</span>
-                    </div>
-                  )}
-                  {detailData.status && (
-                    <div>
-                      <span style={{ fontWeight: 600 }}>Estado:&nbsp;</span>
-                      <span>{detailData.status}</span>
-                    </div>
-                  )}
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", color: "#1f2937", fontSize: "0.95rem" }}>
+                  <div><span style={{ fontWeight: 600 }}>Correo:&nbsp;</span><span>{detailData.email}</span></div>
+                  <div><span style={{ fontWeight: 600 }}>Teléfono:&nbsp;</span><span>{detailData.phone}</span></div>
+                  {detailData.location && <div><span style={{ fontWeight: 600 }}>Ubicación:&nbsp;</span><span>{detailData.location}</span></div>}
+                  {detailData.status && <div><span style={{ fontWeight: 600 }}>Estado:&nbsp;</span><span>{detailData.status}</span></div>}
                 </div>
               </div>
             )}
 
             {!detailLoading && !detailError && !detailData && (
-              <div
-                style={{
-                  padding: "20px",
-                  textAlign: "center",
-                  color: "#475569",
-                }}
-              >
-                No hay información disponible para esta denuncia.
-              </div>
+              <div style={{ padding: "20px", textAlign: "center", color: "#475569" }}>No hay información disponible para esta denuncia.</div>
             )}
           </div>
         </div>
