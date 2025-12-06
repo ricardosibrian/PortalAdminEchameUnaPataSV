@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE_URL, AUTH_TOKEN } from "../config";
 import CustomSelect from "../components/CustomSelect";
 import NuevoPadrino from "../components/NuevoPadrino";
+import FormRenovarPadrino from "../components/FormRenovarPadrino";
 import "../styles/TablaPerros.css";
 
 const STATUS_META = {
-  ACTIVE: { label: "Activo", color: "#1d4ed8" },
-  INACTIVE: { label: "Inactivo", color: "#64748b" },
+  ACTIVE: { label: "Activo", color: "#1d4ed8" },   
+  INACTIVE: { label: "Inactivo", color: "#64748b" }, 
+  PENDING: { label: "Pendiente", color: "#ea580c" }, 
 };
 
 const safeTrim = (value) => (typeof value === "string" ? value.trim() : "");
@@ -77,7 +79,11 @@ export default function GestionPadrinos() {
   const [error, setError] = useState(null);
   
   const [actionSuccess, setActionSuccess] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  
+  const [showForm, setShowForm] = useState(false); 
+  
+  const [renewModal, setRenewModal] = useState({ open: false, id: null, currentAmount: 0 });
+
   const [selected, setSelected] = useState([]);
   
   const [page, setPage] = useState(0);
@@ -268,11 +274,52 @@ export default function GestionPadrinos() {
     await fetchSponsorships();
   };
 
-  const handleDesactivar = () => {
-    console.log("IDs:", selected);
+  // 1. Prepara la modal
+  const handleRenovarClick = () => {
+    if (selected.length !== 1) return;
+    const idToRenew = selected[0];
+    const currentItem = sponsorships.find(s => s.id === idToRenew);
+    
+    setRenewModal({
+      open: true,
+      id: idToRenew,
+      currentAmount: currentItem ? currentItem.amount : 0
+    });
   };
 
-  const isActionDisabled = selected.length === 0 || loading;
+  // 2. Ejecuta la renovación (se pasa como prop onSubmit al modal)
+  const handleSubmitRenovacion = async (newAmount) => {
+    const { id } = renewModal;
+    if (!id) return;
+
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
+      
+      const response = await fetch(`${API_BASE_URL}/sponsorship/renew/${id}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          monthlyAmount: newAmount
+        })
+      });
+
+      if (!response.ok) throw new Error("Error al renovar");
+
+      setRenewModal({ open: false, id: null, currentAmount: 0 }); 
+      setActionSuccess("Padrino renovado exitosamente.");
+      setSelected([]); 
+      await fetchSponsorships();
+
+    } catch (error) {
+      console.error("Error renovando:", error);
+      throw error; 
+    } finally {
+      setTimeout(() => { if (isMountedRef.current) setActionSuccess(null); }, 5000);
+    }
+  };
+
+  const isActionDisabled = selected.length !== 1 || loading;
 
   return (
     <div className="denuncias-page">
@@ -296,24 +343,39 @@ export default function GestionPadrinos() {
 
         <button
           type="button"
-          onClick={handleDesactivar}
+          onClick={handleRenovarClick}
           disabled={isActionDisabled}
           style={{
-            background: "none", border: "none", color: isActionDisabled ? "rgba(220, 38, 38, 0.5)" : "#dc2626",
-            fontWeight: 600, cursor: isActionDisabled ? "not-allowed" : "pointer", opacity: isActionDisabled ? 0.6 : 1,
-            padding: 0, display: "flex", alignItems: "center", gap: "8px"
+            background: "none", 
+            border: "none", 
+            color: isActionDisabled ? "rgba(37, 99, 235, 0.5)" : "#2563eb",
+            fontWeight: 600, 
+            cursor: isActionDisabled ? "not-allowed" : "pointer", 
+            opacity: isActionDisabled ? 0.6 : 1,
+            padding: 0, 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "8px"
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M23 4v6h-6" />
+            <path d="M1 20v-6h6" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          QUITAR APADRINAMIENTO
+          RENOVAR PADRINO
         </button>
       </div>
 
       {actionSuccess && (
         <div style={{ marginTop: "12px", marginBottom: "20px", padding: "16px", backgroundColor: "#dcfce7", color: "#166534", borderRadius: "8px", fontSize: "0.95rem" }}>
           {actionSuccess}
+        </div>
+      )}
+
+      {error && (
+        <div style={{ marginTop: "12px", marginBottom: "20px", padding: "16px", backgroundColor: "#fee2e2", color: "#991b1b", borderRadius: "8px", fontSize: "0.95rem" }}>
+          {error}
         </div>
       )}
 
@@ -492,6 +554,14 @@ export default function GestionPadrinos() {
         <NuevoPadrino
           onClose={handleCloseForm}
           onSubmit={handleCreateSubmit}
+        />
+      )}
+
+      {renewModal.open && (
+        <FormRenovarPadrino 
+          currentAmount={renewModal.currentAmount}
+          onClose={() => setRenewModal({ ...renewModal, open: false })}
+          onSubmit={handleSubmitRenovacion}
         />
       )}
     </div>
