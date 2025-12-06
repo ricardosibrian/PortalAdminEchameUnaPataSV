@@ -45,14 +45,6 @@ function AppContent() {
             } 
           />
           <Route 
-            path="/solicitudes-adopcion" 
-            element={
-              <ProtectedRoute>
-                <SolicitudesAdopcion />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
             path="/denuncias" 
             element={
               <ProtectedRoute>
