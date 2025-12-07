@@ -3,7 +3,6 @@ import { API_BASE_URL, AUTH_TOKEN } from "../config";
 import "../styles/TablaPerros.css";
 import { useNavigate } from "react-router-dom";
 import { generateApplicationsPdf } from "../utils/pdfGenerator";
-import TableSkeleton from "../components/applicationDetails/TableSkeleton";
 
 const STATUS_META = {
   PENDING: { label: "Pendiente", color: "#1d4ed8" },
@@ -134,6 +133,21 @@ export default function SolicitudesAdopcion() {
   return (
     <div className="denuncias-page">
       <h2 className="page-title">Solicitud de adopciones</h2>
+        <div className="acciones-tabla" style={{ marginBottom: "20px" }}>
+        <button
+          type="button"
+          onClick={() => {
+            generateApplicationsPdf(applications).catch((err) => {
+              console.error(err);
+              alert('No fue posible generar el PDF de la tabla. Revisa la consola.');
+            });
+          }}
+          className="btn-pdf"
+          aria-label="Descargar tabla de solicitudes en PDF"
+        >
+          DESCARGAR TABLA (PDF)
+        </button>
+      </div>
 
       {loading && <Loader text="Cargando solicitudes..." />}
       {!loading && error && (
