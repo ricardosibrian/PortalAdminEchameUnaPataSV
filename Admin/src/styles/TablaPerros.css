@@ -303,6 +303,32 @@
 .btn-pdf:active { transform: translateY(0); }
 .btn-pdf:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
 
+/* Update button that matches sidebar color */
+.btn-update-sidebar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, var(--sidebar-bg), #390b0d);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(74,18,20,0.15);
+  transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.btn-update-sidebar:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(74,18,20,0.18); }
+.btn-update-sidebar:active { transform: translateY(0); }
+.btn-update-sidebar:disabled {
+  background: #e5e7eb; /* light gray */
+  color: #6b7280;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.9;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .tabla-perros-container {
@@ -385,6 +411,11 @@
   }
 
   .btn-pdf {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .btn-update-sidebar {
     padding: 8px 12px;
     font-size: 13px;
   }

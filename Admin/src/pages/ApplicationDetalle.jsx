@@ -16,6 +16,9 @@ export default function ApplicationDetalle() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [application, setApplication] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [, setIsUpdating] = useState(false);
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -36,13 +39,23 @@ export default function ApplicationDetalle() {
       observations: observation,
     };
     try {
+      setIsUpdating(true);
       await UpdateApplicationStatus(payload);
 
-      alert("Estado actualizado correctamente");
-      navigate("/");
+      // show a nicer success banner instead of alert
+      setSuccessMessage("Estado actualizado correctamente.");
+      // auto-hide success message after 2.5s and then navigate
+      setTimeout(() => {
+        setSuccessMessage("");
+        navigate("/");
+      }, 2000);
     } catch (error) {
       console.error("Error actualizando solicitud:", error);
-      alert("Error al actualizar la solicitud");
+      setErrorMessage("Error al actualizar la solicitud. Revisa la consola.");
+      // auto-hide error after a while
+      setTimeout(() => setErrorMessage(""), 4000);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -82,6 +95,7 @@ export default function ApplicationDetalle() {
       <h2 className="text-3xl sm:text-4xl font-extrabold mb-2.5 text-gray-800 border-b-2 border-amber-400">
         Solicitud de {application.person.firstNames}
       </h2>
+
       {/* INFORMACIÓN DEL ANIMAL */}
       <div className="bg-white shadow rounded-xl p-6 flex flex-col lg:flex-row gap-8 mb-2.5">
         <div className="flex justify-center lg:w-1/2">
@@ -199,6 +213,8 @@ export default function ApplicationDetalle() {
       <StatusUpdater
         currentStatus={application.status}
         onUpdate={handleStatusUpdate}
+        successMessage={successMessage}
+        errorMessage={errorMessage}
       />
     </section>
   );
