@@ -4,6 +4,8 @@ import CustomSelect from "../components/CustomSelect";
 import "../styles/TablaPerros.css";
 import ReportDetailModal from "../components/denuncias/ReportDetailModal";
 import { Loader } from "../components/Loader";
+import TableSkeleton from "../components/denuncias/TableSkeleton";
+import { Tab } from "@mui/material";
 
 const STATUS_META = {
   OPEN: { label: "Abierto", color: "#1d4ed8" },
@@ -338,7 +340,7 @@ export default function Denuncias() {
         status: safeTrim(report.status) || "",
         type: safeTrim(report.type) || "",
         location: safeTrim(report.location) || "",
-        locationUrl:safeTrim(report.locationUrl) || ""
+        locationUrl: safeTrim(report.locationUrl) || "",
       };
 
       if (isMountedRef.current) setDetailData(normalizada);
@@ -545,17 +547,7 @@ export default function Denuncias() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reports.length === 0 && (
-                    <tr>
-                      <td
-                        className="td"
-                        colSpan={8}
-                        style={{ textAlign: "center" }}
-                      >
-                        <Loader variant="inline" text="Cargando datos..." />
-                      </td>
-                    </tr>
-                  )}
+                  {reports.length === 0 && <TableSkeleton rows={10} />}
                   {visibleRows.map((report) => {
                     const statusMeta = STATUS_META[report.status] || {
                       label: safeTrim(report.status) || "Desconocido",

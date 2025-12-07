@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE_URL, AUTH_TOKEN } from "../config";
 import "../styles/TablaPerros.css";
 import { useNavigate } from "react-router-dom";
+import TableSkeleton from "../components/applicationDetails/TableSkeleton";
 
 const STATUS_META = {
   PENDING: { label: "Pendiente", color: "#1d4ed8" },
@@ -165,11 +166,7 @@ export default function SolicitudesAdopcion() {
               </thead>
               <tbody>
                 {applications.length === 0 && (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: "center" }}>
-                      <Loader text="Cargando solicitudes..." />
-                    </td>
-                  </tr>
+                  <TableSkeleton rows={10}/>
                 )}
                 {applications.map((app) => {
                   const statusMeta = STATUS_META[app.status] || {
