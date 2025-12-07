@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import React,{ useState } from "react";
 import "../styles/Sidebar.css"; 
 import logo from "../assets/logo.png";
 

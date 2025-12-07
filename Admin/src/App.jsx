@@ -10,8 +10,9 @@ import Denuncias from "./pages/Denuncias";
 import SolicitudesApadrinamiento from "./pages/SolicitudesApadrinamiento";
 import GestionPerros from "./pages/GestionPerros";
 import GestionPadrinos from "./pages/GestionPadrinos";
+import ApplicationDetalle from "./pages/ApplicationDetalle";
 
-import "./App.css"; 
+import "./App.css";
 import Login from "./pages/Login";
 
 function AppContent() {
@@ -22,7 +23,7 @@ function AppContent() {
     // Verificar si existe el token TOKEN_APP
     const token = localStorage.getItem("TOKEN_APP");
     const hasToken = token && token.trim() !== "";
-    
+
     if (location.pathname === "/login") {
       setIsLoggedIn(false);
     } else {
@@ -32,57 +33,59 @@ function AppContent() {
 
   return (
     <div className="app-root">
-      <Sidebar showSidebar={isLoggedIn}/>
+      <Sidebar showSidebar={isLoggedIn} />
       <main className={`content${isLoggedIn ? "" : " content--login"}`}>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <ProtectedRoute>
                 <SolicitudesAdopcion />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/denuncias" 
+          <Route path="/solicitudes/:id" element={<ApplicationDetalle />} />
+
+          <Route
+            path="/denuncias"
             element={
               <ProtectedRoute>
                 <Denuncias />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/solicitudes-apadrinamiento" 
+          <Route
+            path="/solicitudes-apadrinamiento"
             element={
               <ProtectedRoute>
                 <SolicitudesApadrinamiento />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/gestion-perros" 
+          <Route
+            path="/gestion-perros"
             element={
               <ProtectedRoute>
                 <GestionPerros />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/gestion-padrinos" 
+          <Route
+            path="/gestion-padrinos"
             element={
               <ProtectedRoute>
                 <GestionPadrinos />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="*" 
+          <Route
+            path="*"
             element={
               <ProtectedRoute>
                 <Inicio />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </main>

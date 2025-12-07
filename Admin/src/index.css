@@ -4,10 +4,10 @@
   --main-font: "Montserrat", sans-serif;
 }
 
-body, * {
+/* body, * {
   margin: 0;
   font-family: var(--main-font);
-}
+} */
 
 a {
   font-weight: 500;

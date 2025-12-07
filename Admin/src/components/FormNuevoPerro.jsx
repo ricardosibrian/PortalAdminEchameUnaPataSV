@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import "../styles/FormNuevoPerro.css";
 
 export default function FormNuevoPerro({ onClose, onSubmit }) {

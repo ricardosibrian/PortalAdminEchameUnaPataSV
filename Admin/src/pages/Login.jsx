@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react"
+import React,{ useState, useEffect } from "react"
 import { Eye, EyeOff, Lock, Mail, AlertCircle, X } from "lucide-react"
 import "../styles/Login.css"
 import { API_BASE_URL } from "../config"

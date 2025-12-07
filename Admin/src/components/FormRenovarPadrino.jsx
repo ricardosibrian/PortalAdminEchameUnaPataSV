@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React,{ useState } from "react";
 // Asegúrate de importar el CSS donde tienes los estilos del modal
 // Si los tienes en un archivo global o en FormNuevoPerro.css, impórtalo aquí:
 import "../styles/FormNuevoPerro.css"; 
