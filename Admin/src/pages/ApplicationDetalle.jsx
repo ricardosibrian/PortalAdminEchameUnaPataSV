@@ -1,8 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { GetApplicationById } from "../service/Adoptions";
-import ObservationsField from "../components/ObservationsField";
+import StatusUpdater from "../components/applicationDetails/StatusUpdater";
 import { UpdateApplicationStatus } from "../service/Adoptions";
+import { Observations } from "../components/applicationDetails/Observations";
 
 import {
   CrueltyFree,
@@ -15,15 +16,12 @@ export default function ApplicationDetalle() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [application, setApplication] = useState(null);
-  const [newStatus, setNewStatus] = useState("");
-  const [observation, setObservation] = useState("");
 
   useEffect(() => {
     const fetchApplication = async () => {
       try {
         const res = await GetApplicationById(id);
         setApplication(res.data);
-        setNewStatus(res.data.status);
       } catch (error) {
         console.error("Error cargando solicitud:", error);
       }
@@ -31,18 +29,17 @@ export default function ApplicationDetalle() {
     fetchApplication();
   }, [id]);
 
-  const handleUpdate = async () => {
+  const handleStatusUpdate = async (status, observation) => {
     const payload = {
       id: id,
-      status: newStatus,
+      status: status,
       observations: observation,
     };
     try {
       await UpdateApplicationStatus(payload);
-      
 
       alert("Estado actualizado correctamente");
-      navigate("/")
+      navigate("/");
     } catch (error) {
       console.error("Error actualizando solicitud:", error);
       alert("Error al actualizar la solicitud");
@@ -187,8 +184,8 @@ export default function ApplicationDetalle() {
             <ul className="list-disc pl-5">
               {application.adoptionReferences.map((ref, i) => (
                 <li key={i}>
-                  {ref.name || " ⎯"}{" "}
-                  {ref.phoneNumber ? `- ${ref.phoneNumber}` : ""}
+                  {ref.name || "⎯"}{" ⎯ "}
+                  {ref.phoneNumber ? `- ${ref.phoneNumber}` : "0000-0000"}
                 </li>
               ))}
             </ul>
@@ -196,56 +193,13 @@ export default function ApplicationDetalle() {
             <p>N/A</p>
           )}
         </div>
-        <div className="w-fit">
-          <h4 className="text-lg font-bold m-3">Comentarios:</h4>
-          {application.observations != null ? (
-            <p>{application.observations}</p>
-          ) : (
-            <p>Aun no se tienen comentarios...</p>
-          )}
-        </div>
+        <Observations observations={application.observations} />
       </div>
 
-      {/* CAMBIO DE ESTADO */}
-      <div className="bg-white shadow rounded-xl p-6 mb-2.5">
-        <h4 className="text-lg font-bold mb-3">Actualizar estado</h4>
-        <div className="flex flex-col gap-3">
-          <select
-            value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value)}
-            className="border border-gray-300 rounded w-fit px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <option value="PENDING">Pendiente</option>
-            <option value="IN_REVIEW">El Revision</option>
-            <option value="REJECTED">Rechazada</option>
-            <option value="REJECTED">Aprovada</option>
-          </select>
-
-          {/* Mostrar observación solo si es rechazado o aprobado opcional */}
-          {(newStatus === "REJECTED" ||
-            newStatus === "APPROVED" ||
-            newStatus === "IN_REVIEW") && (
-            <ObservationsField
-              title="Observaciones"
-              description={
-                newStatus === "REJECTED"
-                  ? "Indica el motivo del rechazo"
-                  : "Puedes agregar un comentario opcional sobre la toma en cuenta"
-              }
-              name="observation"
-              value={observation}
-              onChange={(e) => setObservation(e.target.value)}
-            />
-          )}
-
-          <button
-            onClick={handleUpdate}
-            className="px-4 py-2 rounded font-semibold transition text-amber-50 w-fit"
-          >
-            Actualizar
-          </button>
-        </div>
-      </div>
+      <StatusUpdater
+        currentStatus={application.status}
+        onUpdate={handleStatusUpdate}
+      />
     </section>
   );
 }
