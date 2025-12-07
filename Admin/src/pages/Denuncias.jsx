@@ -4,6 +4,7 @@ import CustomSelect from "../components/CustomSelect";
 import "../styles/TablaPerros.css";
 import ReportDetailModal from "../components/denuncias/ReportDetailModal";
 import { Loader } from "../components/Loader";
+import { generateTablePdf } from "../utils/pdfGenerator";
 
 const STATUS_META = {
   OPEN: { label: "Abierto", color: "#1d4ed8" },
@@ -379,6 +380,17 @@ export default function Denuncias() {
         >
           {closeButtonLabel}
         </button>
+          <button
+              type="button"
+              onClick={() => {
+                  const head = ["#", "Solicitante", "Correo", "Teléfono", "Fecha", "Estado"];
+                  const body = visibleRows.map(r => [r.serial, r.reporter, r.email, r.phone, formatDateTime(r.receptionDate), (r.status || '—')]);
+                  generateTablePdf({ title: 'Reporte de denuncias', head, body }).catch(err => { console.error(err); alert('No fue posible generar el PDF. Revisa la consola.'); });
+              }}
+              className="btn-pdf"
+          >
+              DESCARGAR TABLA (PDF)
+          </button>
       </div>
 
       {actionError && (

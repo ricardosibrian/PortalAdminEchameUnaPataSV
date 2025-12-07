@@ -3,6 +3,7 @@ import FormNuevoPerro from "../components/FormNuevoPerro";
 import CustomSelect from "../components/CustomSelect";
 import { API_BASE_URL, AUTH_TOKEN } from "../config";
 import "../styles/TablaPerros.css";
+import { generateTablePdf } from "../utils/pdfGenerator";
 
 const DEFAULT_DOG_IMAGE = "https://res.cloudinary.com/dhhftvc5t/image/upload/v1/echameunapata/animals/3232/l87pa1tuorzoiptr43ow?_a=DAGCg+ARZAA0";
 
@@ -273,7 +274,7 @@ export default function GestionPerros() {
       <h2 className="page-title">Gestión de Animales</h2>
 
       <div className="acciones-tabla" style={{ marginBottom: "20px" }}>
-        <button 
+        <button
           type="button" 
           onClick={handleNuevo}
           className="btn-nuevo"
@@ -287,6 +288,18 @@ export default function GestionPerros() {
           </svg>
           NUEVO REGISTRO
         </button>
+          <button
+              type="button"
+              onClick={() => {
+                  const head = ["Nombre", "Animal", "Raza", "Género", "Estado"];
+                  const body = visibleRows.map(r => [r.nombre, r.animal, r.raza || '—', r.genero || '—', (r.rawState || '—')]);
+                  generateTablePdf({ title: 'Gestión de Animales', head, body }).catch(err => { console.error(err); alert('No fue posible generar el PDF. Revisa la consola.'); });
+              }}
+              className="btn-pdf"
+              style={{ marginRight: 12 }}
+          >
+              DESCARGAR TABLA (PDF)
+          </button>
       </div>
 
       {actionSuccess && (
