@@ -4,6 +4,7 @@ import CustomSelect from "../components/CustomSelect";
 import NuevoPadrino from "../components/NuevoPadrino";
 import FormRenovarPadrino from "../components/FormRenovarPadrino";
 import "../styles/TablaPerros.css";
+import { TableSkeleton } from "../components/sponsorships/TableSkeleton";
 import { generateTablePdf } from "../utils/pdfGenerator";
 
 const STATUS_META = {
@@ -365,19 +366,6 @@ export default function GestionPadrinos() {
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           RENOVAR PADRINO
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            const head = ["#", "Padrino", "Correo", "Teléfono", "Animal", "Inicio", "Fin", "Estado", "Monto"];
-            const body = visibleRows.map(r => [r.serial, r.sponsorName, r.email, r.phone, r.animalName, formatDateTime(r.startDate), formatDateTime(r.endDate), r.status || '—', r.amount || '—']);
-            generateTablePdf({ title: 'Gestión de Padrinos', head, body }).catch(err => { console.error(err); alert('No fue posible generar el PDF. Revisa la consola.'); });
-          }}
-          className="btn-pdf"
-          style={{ marginRight: 12 }}
-        >
-          DESCARGAR TABLA (PDF)
         </button>
       </div>
 
