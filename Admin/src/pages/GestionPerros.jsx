@@ -5,10 +5,10 @@ import { API_BASE_URL, AUTH_TOKEN } from "../config";
 import { STATUS_CONFIG } from "../utils/animalConfig";
 import "../styles/TablaPerros.css";
 import EditAnimalModal from "../components/animales/EditAnimalModal";
+import TableSkeleton from "../components/animales/TableSkeleton";
 
 const DEFAULT_DOG_IMAGE =
   "https://res.cloudinary.com/dhhftvc5t/image/upload/v1/echameunapata/animals/3232/l87pa1tuorzoiptr43ow?_a=DAGCg+ARZAA0";
-
 
 const SEX_MAP = {
   MALE: "Macho",
@@ -372,20 +372,13 @@ export default function GestionPerros() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td
-                    className="td"
-                    colSpan={6}
-                    style={{ textAlign: "center" }}
-                  >
-                    <Loader variant="inline" text="Cargando datos..." />
-                  </td>
-                </tr>
+                <TableSkeleton rows={rowsPerPage} />
               ) : (
                 visibleRows.map((item) => {
                   const statusConfig =
                     STATUS_CONFIG[item.rawState] ||
                     STATUS_CONFIG.UNDER_ADOPTION;
+
                   return (
                     <tr key={item.id}>
                       <td className="td">{item.nombre}</td>
