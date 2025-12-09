@@ -1,14 +1,8 @@
-import { API_BASE_URL, AUTH_TOKEN } from "../config";
+import { apiGet, apiPut } from "../utils/apiClient";
 
 export const GetApplicationById = async (id) => {
     try {
-        const res = await fetch(`${API_BASE_URL}/adoption/applications/find-by-id/${id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${AUTH_TOKEN}`,
-            },
-        });
+        const res = await apiGet(`/adoption/applications/find-by-id/${id}`);
 
         if (!res.ok) {
             const errorData = await res.json();
@@ -21,20 +15,11 @@ export const GetApplicationById = async (id) => {
         console.log(error);
         throw error;
     }
-
-
 }
 
 export const UpdateApplicationStatus = async (payload) => {
   try {
-    const res = await fetch(`${API_BASE_URL}/adoption/applications/update-application`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${AUTH_TOKEN}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    const res = await apiPut(`/adoption/applications/update-application`, payload);
 
     if (!res.ok) {
       const errorData = await res.json();
@@ -48,3 +33,4 @@ export const UpdateApplicationStatus = async (payload) => {
     throw error;
   }
 };
+

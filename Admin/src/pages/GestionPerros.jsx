@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import FormNuevoPerro from "../components/FormNuevoPerro";
 import CustomSelect from "../components/CustomSelect";
-import { API_BASE_URL, AUTH_TOKEN } from "../config";
+import { apiFetch } from "../utils/apiClient";
 import { STATUS_CONFIG } from "../utils/animalConfig";
 import "../styles/TablaPerros.css";
 import EditAnimalModal from "../components/animales/EditAnimalModal";
@@ -270,9 +270,9 @@ export default function GestionPerros() {
       }
     }
 
-    const response = await fetch(`${API_BASE_URL}/animal/register`, {
+    const response = await apiFetch(`/animal/register`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${AUTH_TOKEN}` },
+      headers: {}, // Remove Content-Type for FormData
       body: formData,
     });
 

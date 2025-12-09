@@ -1,5 +1,5 @@
 import React,{ useState, useEffect } from "react";
-import { API_BASE_URL, AUTH_TOKEN } from "../config";
+import { apiGet } from "../utils/apiClient";
 import "../styles/FormNuevoPerro.css";
 
 export default function NuevoPadrino({ onClose, onSubmit }) {
@@ -27,13 +27,7 @@ export default function NuevoPadrino({ onClose, onSubmit }) {
     const fetchAnimals = async () => {
       setLoadingAnimals(true);
       try {
-        const headers = { "Content-Type": "application/json" };
-        if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
-
-        const response = await fetch(`${API_BASE_URL}/animal/find-all`, {
-          method: "GET",
-          headers,
-        });
+        const response = await apiGet(`/animal/find-all`);
 
         if (response.ok) {
           const result = await response.json();

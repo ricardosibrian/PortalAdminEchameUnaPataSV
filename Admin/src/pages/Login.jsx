@@ -3,6 +3,7 @@ import React,{ useState, useEffect } from "react"
 import { Eye, EyeOff, Lock, Mail, AlertCircle, X } from "lucide-react"
 import "../styles/Login.css"
 import { API_BASE_URL } from "../config"
+import { clearAuthData } from "../utils/apiClient"
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
@@ -10,6 +11,11 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+
+  // Clear auth data when login page mounts
+  useEffect(() => {
+    clearAuthData();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

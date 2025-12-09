@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { API_BASE_URL, AUTH_TOKEN } from "../config";
+import { apiGet } from "../utils/apiClient";
 import "../styles/TablaPerros.css";
 import { useNavigate } from "react-router-dom";
 import TableSkeleton from "../components/applicationDetails/TableSkeleton";
@@ -59,13 +59,10 @@ export default function SolicitudesAdopcion() {
   const fetchApplications = useCallback(async (signal) => {
     if (isMountedRef.current) setLoading(true);
 
-    const headers = { "Content-Type": "application/json" };
-    if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
-
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/adoption/applications/find-all`,
-        { method: "GET", headers, signal }
+      const response = await apiGet(
+        `/adoption/applications/find-all`,
+        { signal }
       );
       if (!response.ok)
         throw new Error(`Error al obtener solicitudes: ${response.status}`);

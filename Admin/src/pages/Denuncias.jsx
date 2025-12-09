@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { API_BASE_URL, AUTH_TOKEN } from "../config";
+import { apiGet, apiPatch } from "../utils/apiClient";
 import CustomSelect from "../components/CustomSelect";
 import "../styles/TablaPerros.css";
 import ReportDetailModal from "../components/denuncias/ReportDetailModal";
@@ -305,13 +305,9 @@ export default function Denuncias() {
       setDetailData(null);
     }
 
-    const headers = { "Content-Type": "application/json" };
-    if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
-
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/reports/find-by-id/${reportId}`,
-        { method: "GET", headers }
+      const response = await apiGet(
+        `/reports/find-by-id/${reportId}`
       );
 
       if (!response.ok)

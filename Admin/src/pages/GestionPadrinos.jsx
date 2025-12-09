@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { API_BASE_URL, AUTH_TOKEN } from "../config";
+import { apiGet, apiPost, apiPut } from "../utils/apiClient";
 import CustomSelect from "../components/CustomSelect";
 import NuevoPadrino from "../components/NuevoPadrino";
 import FormRenovarPadrino from "../components/FormRenovarPadrino";
@@ -324,15 +324,8 @@ export default function GestionPadrinos() {
     if (!id) return;
 
     try {
-      const headers = { "Content-Type": "application/json" };
-      if (AUTH_TOKEN) headers.Authorization = `Bearer ${AUTH_TOKEN}`;
-
-      const response = await fetch(`${API_BASE_URL}/sponsorship/renew/${id}`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({
-          monthlyAmount: newAmount,
-        }),
+      const response = await apiPut(`/sponsorship/renew/${id}`, {
+        monthlyAmount: newAmount,
       });
 
       if (!response.ok) throw new Error("Error al renovar");
